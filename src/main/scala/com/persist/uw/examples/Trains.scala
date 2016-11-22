@@ -14,6 +14,8 @@ case class Path(connections: Seq[Connection]) {
   def stations: Seq[Station] = connections.map(_.from)
 }
 
+//google graph algo : pragle used in spark graphx
+
 case class Info(path: Option[Path])
 
 class Trains {

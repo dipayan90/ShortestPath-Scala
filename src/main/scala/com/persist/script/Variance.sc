@@ -11,15 +11,15 @@ case class Dog(name: String) extends Animal
 
 case class Cow(name: String)
 
-val fluffy = new Cat("fluffy")
-val rover = new Dog("rover")
-val bess = new Cow("bess")
+val fluffy =  Cat("fluffy")
+val rover =  Dog("rover")
+val bess = Cow("bess")
 
 // Simple parameter (<= parameter, >= result
 
 
-def fa(a: Animal) = {println(a.name);a}
-def fc(a: Cat) = {println(a.name);a}
+def fa(a: Animal) : Animal = {println(a.name);a}
+def fc(a: Cat) : Cat = {println(a.name);a}
 
 fa(fluffy)  // to wider
 //fa(bess)
@@ -41,6 +41,11 @@ fsc(scat)
 val as1:mutable.Seq[Animal] = fsa(sanimal)
 //val as2:mutable.Seq[Animal] = fsc(scat)
 
+// mutable stuff doesn't work but immutable stuff works because, there is no
+//trype constraint necessary since , a immutable sequence cannot be mutated to se are
+//certain that it wil be of type superclass Animal where as in the mutable case
+//we dont have that guarentee that it will adhere to the superclass animal.
+
 // Immutable sequence
 
 def ifsa(a: immutable.Seq[Animal]) = {a.map(println(_)); a}
@@ -61,7 +66,7 @@ def vfsa[T<:Animal](a: immutable.Seq[T]) = {a.map(println(_)); a}
 vfsa(isanimal)
 vfsa(iscat)  // Type is Seq[Cat] not Seq[Animal]
 
-// Covariance(+)  and Contravariance (-)
+// Covariance(+) -> it goes outside  and Contravariance (-) -> it goes inside
 
 case class W[+T,-U]() {
   def f(x:U):T = x.asInstanceOf[T]
@@ -72,7 +77,7 @@ case class W[+T,-U]() {
 // W[Cat,Animal] < W[Animal,Cat]
 
 def w1:W[Animal,Cat] = W[Cat,Animal]()
-def W2:W[Cat,Animal] = W[Animal,Cat]()
+//def W2:W[Cat,Animal] = W[Animal,Cat]()
 
 
 

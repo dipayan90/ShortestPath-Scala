@@ -14,7 +14,7 @@ val a3 = a(false)
 
 // List
 
-def b[T](x:List[Any]):String = {
+def b[T](x:List[T]):String = {
   x match {
     case i:List[Int] => s"Int:$i"
     case s:List[String@unchecked] => s"String:$s"

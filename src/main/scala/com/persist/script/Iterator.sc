@@ -56,6 +56,9 @@ case class Leaf(s:String) extends Tree {
   override def foreach[U](f: (String) => U): Unit = f(s)
 }
 
+val t = Inner(Inner(Leaf("ABC"),Leaf("X")),Leaf("??"))
+for (i<-t) println(i)
+
 // Iterable is a subtrait of Traversable
 // anything that is iterable is traversable
 // but not vis-versa
@@ -67,8 +70,7 @@ l.foreach(println(_))
 
 // Streams
 
-val t = Inner(Inner(Leaf("ABC"),Leaf("X")),Leaf("??"))
-for (i<-t) println(i)
+
 
 val s1 = Stream.from(1)
 val x = s1.filter(_%5==0).drop(3).take(5).toList
