@@ -1,11 +1,8 @@
 package com.persist.uw.examples
 
-import java.util.concurrent
 import java.util.concurrent.TimeUnit
 
-import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
-import scala.io.Source
 import scala.concurrent.duration._
 
 case class Station(name: String)
@@ -36,6 +33,45 @@ class Trains {
     connections.toList
   }
 
+  def getDirectConnections(station: Station) : List[Connection] = {
+    connections.filter(_.from.equals(station))
+  }
+
+  def getDuration(start : Station , destination: Station) : Duration = {
+    val conns = connections.filter(e => e.from.equals(start) && e.to.equals(destination))
+    if(conns.nonEmpty){
+      conns.head.time
+    }else{
+      Duration.Inf
+    }
+  }
+
+  def findMinimumFromMap(trackerMap: Map[(Station,Station),(Duration,Station)]) : Station = {
+    val res = trackerMap.toSeq.min(Ordering.by[((Station,Station),(Duration,Station)),Duration](_._2._1))
+    res._1._2
+  }
+
+  val connections : List[Connection] = readFile()
+  val stations:  List[Station] = connections.map(_.from).distinct
+
+  // start with paris and then create a matrix with the values
+  // map of (start Station,end Station) - > (Weight,Via Station)
+  def implementDjktrasAlgorithm() = {
+    val baseStation = Station("Paris")
+    val stationsToCover = stations.filter(!_.equals(baseStation))
+
+    var trackerMap = Map.empty[(Station,Station),(Duration,Station)]
+
+    var startStation = baseStation
+    for(stn <- stationsToCover){
+      trackerMap = trackerMap + ((startStation,stn) -> (getDuration(startStation,stn),startStation))
+    }
+    System.out.println("tracker map is, in 1st pass ")
+    System.out.println(trackerMap)
+    val nextMinimun = findMinimumFromMap(trackerMap)
+    System.out.println("next min is: ")
+    System.out.println(nextMinimun)
+  }
 
   def toParis(): Seq[(Station, Info)] = ???
 }
@@ -44,7 +80,8 @@ object Trains {
 
   def main(args: Array[String]): Unit = {
     val t = new Trains
-    t.readFile().foreach(print)
+    t.connections.foreach(print)
+    t.implementDjktrasAlgorithm()
     val state = t.toParis()
     println("")
     for ((station, info) <- state) {
