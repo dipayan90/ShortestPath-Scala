@@ -93,6 +93,7 @@ class Trains {
         if(columnMin._1 < duration){
           trackerMap = trackerMap + ((stationsAlreadyVisited.head,stn) -> columnMin)
         }else{
+          //TODO:  when going from b to c , add a to b and then b to c , if a to b is Inf then 0 else the a to b value + b to c value
           trackerMap = trackerMap + ((stationsAlreadyVisited.head,stn) -> (duration,stationsAlreadyVisited.head))
         }
       }
