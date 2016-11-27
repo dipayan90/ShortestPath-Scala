@@ -15,8 +15,6 @@ case class Path(connections: Seq[Connection]) {
   def stations: Seq[Station] = connections.map(_.from)
 }
 
-//google graph algo : pragle used in spark graphx
-
 case class Info(path: Option[Path])
 
 class Trains {
@@ -75,13 +73,52 @@ class Trains {
   }
 
   val connections : List[Connection] = readFile()
-  val stations:  List[Station] = ( connections.map(_.from).distinct ::: connections.map(_.to).distinct).distinct
+  val stations:  List[Station] = ( connections.map(_.from).distinct ::: connections.map(_.to).distinct).distinct.sortBy(e => e.name).reverse
+
+  // input is : (destination,via)
+  def constructViaPoints(station: Station , viaList : List[(Station,Station)]) : Option[Path] = {
+    val base = Station("Paris")
+    var result = List.empty[Station]
+    result = station :: result
+    while(!result.head.equals(base) && !result.head.equals(Station("No_Path"))){
+      val filteredList = viaList.filter(_._1.equals(result.head))
+      val via = filteredList.head._2
+      result = via :: result
+    }
+    getConnectionsFromViaPoints(result)
+  }
+
+  def getConnectionsFromViaPoints( stationList : List[Station]) : Option[Path] = {
+    def containsNoPath() : Boolean= {
+      for(stn <- stationList) {
+        if(stn.equals(Station("No_Path"))){
+          return true
+        }
+      }
+      false
+    }
+    if(containsNoPath() || stationList.length < 2){
+      None
+    } else{
+      var result = List.empty[Connection]
+      stationList.sliding(2).foreach(e => {
+        val conn = getConnection(e.head,e.tail.head)
+        result = conn :: result
+      })
+      Some(Path(result))
+    }
+  }
+
+  def getConnection(start: Station, end: Station) : Connection = {
+    connections.filter(e => (e.from.equals(start) && e.to.equals(end) ) || (e.from.equals(end) && e.to.equals(start) )).head
+  }
 
   // start with paris and then create a matrix with the values
   // map of (start Station,end Station) - > (Weight,Via Station)
-  def implementDjktrasAlgorithm() = {
+  def implementDjktrasAlgorithm() : Seq[(Station, Info)] = {
     val baseStation = Station("Paris")
     var stationsAlreadyVisited = List.empty[Station]
+    var returnValue = List.empty[(Station, Info)]
     // initially add the base station to the list of stations already visited
     stationsAlreadyVisited =  baseStation :: stationsAlreadyVisited
 
@@ -100,37 +137,33 @@ class Trains {
           trackerMap = trackerMap + ((stationsAlreadyVisited.head,stn) -> (duration,stationsAlreadyVisited.head))
         }
       }
-      System.out.println("################")
-      // print from axis
-      System.out.println("Currently visiting :  "+stationsAlreadyVisited.head.name)
-      System.out.println("**************Connections in this level *********")
-      // print map now for the from axis
-      trackerMap.filter(_._1._1.equals(stationsAlreadyVisited.head)).foreach(print)
-      //add the next min to the from axis
       stationsAlreadyVisited = findMinimumFromMap(trackerMap,stationsAlreadyVisited.head) :: stationsAlreadyVisited
-      //next minimum is
-      System.out.println(" \n Next minimum is : "+ stationsAlreadyVisited.head.name)
-    }
+      }
 
-
-    // Print tracker map here and see the output
-    System.out.println("Tracker map is : ############### *********************")
+    var Result = List.empty[(Station,Station)]
     for(stn <- stations) {
-      System.out.println("minimum vertices to reach paris from station: "+ stn.name + " is:  ")
-      val Result = findColumnarMinimum(stn,trackerMap)
-      System.out.println(Result)
+      val res = findColumnarMinimum(stn,trackerMap)
+      if(res._1.equals(Duration.Inf)){
+        Result = (stn,Station("No_Path")) :: Result
+      }else{
+        Result = (stn,res._2) :: Result
+      }
     }
+
+    for(stn <- stations){
+      val path = constructViaPoints(stn,Result)
+      returnValue = (stn,Info(path = path)) :: returnValue
+    }
+    returnValue
   }
 
-  def toParis(): Seq[(Station, Info)] = ???
+  def toParis(): Seq[(Station, Info)] = implementDjktrasAlgorithm()
 }
 
 object Trains {
 
   def main(args: Array[String]): Unit = {
     val t = new Trains
-    t.connections.foreach(print)
-    t.implementDjktrasAlgorithm()
     val state = t.toParis()
     println("")
     for ((station, info) <- state) {
@@ -139,7 +172,7 @@ object Trains {
           val h = p.time.toHours
           val m = (p.time - h.hours).toMinutes
           val ts = f"$h%d:$m%02d"
-          (p.stations.reverse.:+(Station("Paris")).map(_.name).mkString("(", ",", ")"), ts)
+          (p.stations.reverse.:+(Station("Paris")).dropRight(1).map(_.name).mkString("(", ",", ")"), ts)
         case None => ("no path", "")
       }
       println(s"${station.name} to Paris $t: $p")
