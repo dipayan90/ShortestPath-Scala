@@ -64,7 +64,9 @@ class Trains {
   }
 
   def findColumnarMinimum(to : Station,trackerMap: Map[(Station,Station),(Duration,Station)]) : (Duration, Station) = {
-    if(trackerMap.isEmpty || !trackerMap.toSeq.exists(_._1._2.equals(to))){
+    if(to.equals(Station("Paris"))){
+      (Duration.Zero,to)
+    }else if(trackerMap.isEmpty || !trackerMap.toSeq.exists(_._1._2.equals(to))){
       (Duration.Inf,to)
     }else{
       val minimumStation : ((Station, Station), (Duration, Station)) = trackerMap.toSeq.filter(_._1._2.equals(to)).min(Ordering.by[((Station,Station),(Duration,Station)),Duration](_._2._1))
@@ -88,12 +90,13 @@ class Trains {
 
     while(stations.length > stationsAlreadyVisited.length){
       for(stn <- toCover(stationsAlreadyVisited)){
-        val duration = getDuration(stationsAlreadyVisited.head,stn)
+        //when going from b to c , add a to b and then b to c , if a to b is Inf then 0 else the a to b value + b to c value , lets record it as prev duration
+        val prevDuration = findColumnarMinimum(stationsAlreadyVisited.head,trackerMap)
+        val duration = getDuration(stationsAlreadyVisited.head,stn) + prevDuration._1// + add the previous duration
         val columnMin = findColumnarMinimum(stn,trackerMap)
         if(columnMin._1 < duration){
           trackerMap = trackerMap + ((stationsAlreadyVisited.head,stn) -> columnMin)
         }else{
-          //TODO:  when going from b to c , add a to b and then b to c , if a to b is Inf then 0 else the a to b value + b to c value
           trackerMap = trackerMap + ((stationsAlreadyVisited.head,stn) -> (duration,stationsAlreadyVisited.head))
         }
       }
@@ -111,7 +114,12 @@ class Trains {
 
 
     // Print tracker map here and see the output
-
+    System.out.println("Tracker map is : ############### *********************")
+    for(stn <- stations) {
+      System.out.println("minimum vertices to reach paris from station: "+ stn.name + " is:  ")
+      val Result = findColumnarMinimum(stn,trackerMap)
+      System.out.println(Result)
+    }
   }
 
   def toParis(): Seq[(Station, Info)] = ???
